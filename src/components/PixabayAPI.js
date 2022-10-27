@@ -13,5 +13,15 @@ export const fetchImages = async (input, page) => {
       per_page: 12,
     },
   });
-  return response.data;
+
+  let responseData = response.data;
+
+  response.data.hits = responseData.hits.map(image => ({
+    id: image.id,
+    webformatURL: image.webformatURL,
+    largeImageURL: image.largeImageURL,
+    tags: image.tags,
+  }));
+
+  return responseData;
 };

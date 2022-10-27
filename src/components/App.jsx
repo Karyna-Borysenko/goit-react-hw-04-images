@@ -17,25 +17,36 @@ class App extends React.Component {
     input: '',
     page: 1,
     loading: false,
-    loadMore: false,
     visibleLoadMore: false,
   };
 
   async componentDidUpdate(_, prevState) {
-    try {
-      //----Для поиска----
-      if (prevState.input !== this.state.input) {
+    if (
+      prevState.input !== this.state.input ||
+      prevState.page !== this.state.page
+    ) {
+      try {
         this.setState({ loading: true });
+
+        let prevImages = prevState.images;
+
+        //----Проверка для поиска, чтоб сбрасывались картинки при новом поиске, а не добавлялись к предыдущим----
+        if (prevState.input !== this.state.input) {
+          prevImages = [];
+        }
+        //----
 
         const foundImages = await fetchImages(
           this.state.input,
           this.state.page
         );
 
+        let images = [...prevImages, ...foundImages.hits];
+
         this.setState({
-          images: [...foundImages.hits],
+          images: images,
           loading: false,
-          visibleLoadMore: foundImages.hits.length !== foundImages.totalHits,
+          visibleLoadMore: images.length !== foundImages.totalHits,
         });
 
         if (foundImages.hits.length === 0) {
@@ -44,29 +55,9 @@ class App extends React.Component {
           });
           return;
         }
+      } catch (error) {
+        console.log(error);
       }
-
-      //----Для loadMore----
-      if (this.state.loadMore) {
-        this.setState({
-          images: prevState.images,
-          loading: true,
-          loadMore: false,
-        });
-        const foundImages = await fetchImages(
-          this.state.input,
-          this.state.page
-        );
-
-        let images = [...prevState.images, ...foundImages.hits];
-        this.setState({
-          images: images,
-          loading: false,
-          visibleLoadMore: images.length !== foundImages.totalHits,
-        });
-      }
-    } catch (error) {
-      console.log(error);
     }
   }
 
@@ -79,7 +70,6 @@ class App extends React.Component {
   loadMore = () => {
     this.setState(prevState => ({
       page: prevState.page + 1,
-      loadMore: true,
     }));
     scroll.scrollToBottom();
   };
