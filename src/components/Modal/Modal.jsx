@@ -46,6 +46,8 @@ class Modal extends React.Component {
 
 Modal.propTypes = {
   onClose: PropTypes.func.isRequired,
+  largeImageURL: PropTypes.string.isRequired,
+  description: PropTypes.string.isRequired,
 };
 
 export default Modal;

@@ -28,26 +28,16 @@ class App extends React.Component {
       try {
         this.setState({ loading: true });
 
-        let prevImages = prevState.images;
-
-        //----Проверка для поиска, чтоб сбрасывались картинки при новом поиске, а не добавлялись к предыдущим----
-        if (prevState.input !== this.state.input) {
-          prevImages = [];
-        }
-        //----
-
         const foundImages = await fetchImages(
           this.state.input,
           this.state.page
         );
 
-        let images = [...prevImages, ...foundImages.hits];
-
-        this.setState({
-          images: images,
+        this.setState(prevState => ({
+          images: [...prevState.images, ...foundImages.hits],
           loading: false,
-          visibleLoadMore: images.length !== foundImages.totalHits,
-        });
+          visibleLoadMore: this.state.images.length !== foundImages.totalHits,
+        }));
 
         if (foundImages.hits.length === 0) {
           toast('No pictures with this title', {
@@ -63,7 +53,7 @@ class App extends React.Component {
 
   //----Записываем значение при отправке----
   handleFormSubmit = input => {
-    this.setState({ input, page: 1 });
+    this.setState({ input, page: 1, images: [] });
   };
 
   //----Загрузить ещё----
