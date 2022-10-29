@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { animateScroll as scroll } from 'react-scroll';
 
 import toast, { Toaster } from 'react-hot-toast';
@@ -11,78 +11,65 @@ import { Button } from './Button/Button';
 
 import { Text } from './App.styled';
 
-class App extends React.Component {
-  state = {
-    images: [],
-    input: '',
-    page: 1,
-    loading: false,
-    visibleLoadMore: false,
-  };
+export default function App() {
+  const [images, setImages] = useState([]);
+  const [input, setInput] = useState('');
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [visibleLoadMore, setVisibleLoadMore] = useState(false);
 
-  async componentDidUpdate(_, prevState) {
-    if (
-      prevState.input !== this.state.input ||
-      prevState.page !== this.state.page
-    ) {
+  useEffect(() => {
+    if (!input) {
+      return;
+    }
+    async function fetchData() {
       try {
-        this.setState({ loading: true });
+        setLoading(true);
 
-        const foundImages = await fetchImages(
-          this.state.input,
-          this.state.page
-        );
+        const foundImages = await fetchImages(input, page);
 
-        this.setState(prevState => ({
-          images: [...prevState.images, ...foundImages.hits],
-          loading: false,
-          visibleLoadMore: this.state.images.length !== foundImages.totalHits,
-        }));
+        setImages(prevImages => [...prevImages, ...foundImages.hits]);
+        setLoading(false);
+        setVisibleLoadMore(!(page * 12 >= foundImages.totalHits));
 
         if (foundImages.hits.length === 0) {
-          toast('No pictures with this title', {
-            icon: '😢',
-          });
+          toast('No pictures with this title', { icon: '😢' });
           return;
         }
       } catch (error) {
         console.log(error);
       }
     }
-  }
+    fetchData();
+  }, [input, page]);
 
   //----Записываем значение при отправке----
-  handleFormSubmit = input => {
-    this.setState({ input, page: 1, images: [] });
-  };
+  function handleFormSubmit(input) {
+    setImages([]);
+    setInput(input);
+    setPage(1);
+  }
 
   //----Загрузить ещё----
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  function loadMore() {
+    setPage(prevPage => prevPage + 1);
     scroll.scrollToBottom();
-  };
+  }
 
   //----Рендер----
-  render() {
-    const { input, loading, images, visibleLoadMore } = this.state;
-    return (
-      <>
-        <Searchbar onSubmit={this.handleFormSubmit} />
+  return (
+    <>
+      <Searchbar onSubmit={handleFormSubmit} />
 
-        {!input && <Text>Enter image name, please!</Text>}
+      {!input && <Text>Enter image name, please!</Text>}
 
-        {!loading && images && <ImageGallery images={images} />}
+      {!loading && images && <ImageGallery images={images} />}
 
-        {loading && <Loader loading={loading} />}
+      {loading && <Loader loading={loading} />}
 
-        {visibleLoadMore && <Button onClick={this.loadMore} />}
+      {visibleLoadMore && <Button onClick={loadMore} />}
 
-        <Toaster position="top-right" />
-      </>
-    );
-  }
+      <Toaster position="top-right" />
+    </>
+  );
 }
-
-export default App;
